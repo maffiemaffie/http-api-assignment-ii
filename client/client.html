@@ -5,7 +5,74 @@
   <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script>
+    const handleResponse = async (response) => {
+      const content = document.querySelector('#content');
 
+      const responseTitles = {
+        200: 'Success',
+        201: 'Created',
+        204: 'Updated (No Content)',
+        400: 'Bad Request',
+        404: 'Not Found',
+      };
+
+      content.innerHTML = responseTitles[response.status] ? 
+      `<b>${responseTitles[response.status]}</b>`:
+      `<p>Status code not implemented</p>`;
+
+      const contentType = response.headers.get('Content-Type');
+      const responseText = await response.text();
+
+      let parsedResponse = {} 
+      if (responseText) parsedResponse = JSON.parse(responseText);
+      if (parsedResponse.message) content.innerHTML += `<p>Message: ${parsedResponse.message}</p>`;
+      if (parsedResponse.users) content.innerHTML += `<p>${JSON.stringify(parsedResponse.users)}</p>`;
+    }
+
+    const sendFetchRequest = (url, method, params) => {
+      const options = {
+        method: method,
+      };
+
+      const paramsString = !params ? "" : "?" + Object.entries(params).map(([key, value]) => `${key}=${value}`).join('&');
+      const fetchPromise = fetch(url + paramsString, options);
+
+      fetchPromise.then(response => { handleResponse(response) });
+    }
+
+    const addUserFetch = (e) => {
+      const nameField = document.querySelector('#nameField');
+      const ageField = document.querySelector('#ageField');
+
+      const name = nameField.value;
+      const age = ageField.value;
+
+      e.preventDefault();
+      sendFetchRequest('/addUser', 'POST', { name, age });
+      return false;
+    }
+
+    const getUserFetch = (e) => {
+      const urlSelect = document.querySelector('#urlField');
+      const methodSelect = document.querySelector('#methodSelect');
+
+      const url = urlSelect.options[urlSelect.selectedIndex].value;
+      const method = methodSelect.options[methodSelect.selectedIndex].value;
+
+      e.preventDefault();
+      sendFetchRequest(url, method);
+      return false;
+    }
+
+    const init = () => {
+      const nameForm = document.querySelector('#nameForm');
+      nameForm.addEventListener('submit', addUserFetch);
+
+      const userForm = document.querySelector('#userForm');
+      userForm.addEventListener('submit', getUserFetch);
+    };
+
+    window.onload = init;
   </script>
 </head>
 <body>
